@@ -7,9 +7,9 @@
 //Open folder with files
 #@ String(value="Welcome to Emulsion Distribution Analyser", visibility = "MESSAGE") hint;
 #@ File (label = "Source of Raw Images", style = "directory") DirSrc
-#@ String (choices={"Red channel", "Green channel", "Blue channel"}) Chosenchannel
+//#@ String (choices={"Red channel", "Green channel", "Blue channel"}) Chosenchannel
 
-requires("1.53u");
+//requires("1.53u");
 
 
 
@@ -27,7 +27,7 @@ listFiles(DirSrc,finalList);
 Array.show(finalList);
 // open image i
 for (i = 0; i<finalList.length; i++){
-	setBatchMode(true);
+	//setBatchMode(true);
 	open(finalList[i]);
 	Filename = getInfo("image.filename");
 	// substract background (homogeneisation)
@@ -57,7 +57,7 @@ for (i = 0; i<finalList.length; i++){
 	selectWindow(Colorchannel1);
 	run("Subtract Background...", "rolling=50 light sliding");
 	rename("RollingBall");
-	imageCalculator("Subtract create 32-bit","RollingBall","Blurred");
+	imageCalculator("Subtract create","RollingBall","Blurred");
 	setAutoThreshold("Otsu");
 	run("Convert to Mask");
 	rename(Colorchannel1+"_mask");
@@ -66,23 +66,22 @@ for (i = 0; i<finalList.length; i++){
 	run("Gaussian Blur...", "sigma=80");
 	rename("Blurred");
 	selectWindow(Colorchannel2);
-	run("Subtract Background...", "rolling=50 light sliding");
+	run("Subtract Background...", "rolling=50 light");
 	rename("RollingBall");
-	imageCalculator("Subtract create 32-bit","RollingBall","Blurred");
+	imageCalculator("Subtract create","RollingBall","Blurred");
 	setAutoThreshold("Otsu");
 	run("Convert to Mask");
 	rename(Colorchannel2+"_mask");
-	imageCalculator("OR create 32-bit", Colorchannel1+"_mask",Colorchannel2+"_mask");
-	
-	run("Remove Outliers...", "radius=3 threshold=50 which=Dark");
-	run("8-bit");
+	imageCalculator("OR create", Colorchannel1+"_mask",Colorchannel2+"_mask");
+	run("Remove Outliers...", "radius=2 threshold=50 which=Bright");
+	//run("Fill Holes");
 	run("Watershed");
 
 	
 
 //Segmentation (Objects touching the sides are not considered))
  	setAutoThreshold("Otsu");
- 	run("Analyze Particles...", "size=10-5000 pixel circularity=0.7-1.00 exclude clear include add");
+ 	run("Analyze Particles...", "size=10-10000 pixel circularity=0.7-1.00 exclude clear include add");
  	run("Set Measurements...", "area fit redirect=None decimal=3");
  	roiManager("Measure");
  	run("Distribution...", "parameter=Area automatic");
@@ -91,6 +90,7 @@ for (i = 0; i<finalList.length; i++){
 	
 	saveAs("Results", DirOut+Filename+"_List.csv");
 	roiManager("Save", DirOut+Filename+"_RoiSet.zip");
+	roiManager("Delete");
 	run("Close All");
 	}
 // segmentation 
